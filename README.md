@@ -160,11 +160,3 @@ project-forge/
     ├── 3-architecture/              #   Stack, infra, auth, security
     └── 4-planning/                  #   Roadmap, sprints, pipeline, decision log
 ```
-
-## Contributing
-
-This is a living framework. If you find a phase or command that's missing, open an issue or PR.
-
-## License
-
-MIT
