@@ -115,12 +115,17 @@ project-forge/
 ├── docs/
 │   └── framework.md                 # Complete lifecycle reference
 ├── agents/                          # 🤖 Pre-built agent definitions
+│   ├── agent-map.md                 #   Project type → active agents + dispatch
 │   ├── frontend.md                  #   UI components, state, routing
 │   ├── backend.md                   #   APIs, business logic, auth
 │   ├── database.md                  #   Schema, migrations, queries
 │   ├── devops.md                    #   Docker, scripts, deploys (CI-agnostic)
 │   ├── qa.md                        #   Tests across all layers
-│   └── agent-map.md                 #   Dispatch rules: file → agent
+│   ├── cli.md                       #   CLI tools, args, output, signals
+│   ├── desktop.md                   #   Electron/Tauri, IPC, packaging
+│   ├── mobile.md                    #   React Native/Flutter, navigation, offline
+│   ├── library.md                   #   npm/PyPI packages, semver, API design
+│   └── data.md                      #   Pipelines, ETL, processing, scheduling
 ├── commands/                        # 🤖 27 commands (zero ghost)
 │   ├── forge-init.md                # 🚀 Interactive project wizard
 │   ├── forge-dev.md                 # 🚀 Development autopilot

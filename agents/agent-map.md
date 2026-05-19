@@ -1,56 +1,122 @@
 # Agent Map
 
-> The orchestrator uses this map to dispatch tasks to the right agent based on which files are involved.
+> Defines which agents are active per project type and how the orchestrator dispatches tasks.
+
+## Project types → active agents
+
+| Project type | Active agents | Notes |
+|-------------|---------------|-------|
+| **Web fullstack** | frontend, backend, database, devops, qa | The classic combo |
+| **SPA + external API** | frontend, devops, qa | No backend/db — consumes third-party APIs |
+| **API / backend only** | backend, database, devops, qa | Headless service, no UI |
+| **CLI tool** | cli, devops, qa | Command-line interface |
+| **CLI + backend** | cli, backend, database, devops, qa | CLI that talks to a server |
+| **Desktop app** | desktop, frontend, devops, qa | Electron, Tauri, native |
+| **Desktop + backend** | desktop, frontend, backend, database, devops, qa | Desktop app with API |
+| **Mobile app** | mobile, frontend, devops, qa | React Native, Flutter, native |
+| **Mobile + backend** | mobile, frontend, backend, database, devops, qa | Mobile app with API |
+| **Library / package** | library, devops, qa | npm, PyPI, crate, gem |
+| **Data pipeline** | data, database, devops, qa | ETL, processing, analytics |
+| **Data + API** | data, backend, database, devops, qa | Pipeline with API layer |
+| **Fullstack + mobile** | frontend, mobile, backend, database, devops, qa | Web + mobile sharing backend |
+
+**devops** and **qa** are always active — every project needs building, deploying, and testing.
 
 ## Dispatch rules
 
-| File pattern | Primary agent | Secondary agent | Notes |
-|-------------|---------------|-----------------|-------|
-| `src/components/**` | frontend | qa | UI components |
-| `src/features/**` | frontend | qa | Feature modules |
-| `src/pages/**`, `src/app/**` | frontend | — | Routes and layouts |
-| `src/hooks/**` | frontend | qa | Custom hooks |
-| `src/stores/**` | frontend | — | Client-side state |
-| `src/styles/**`, `src/assets/**` | frontend | — | Design assets |
-| `src/types/**` | backend | frontend | Shared types — backend defines, frontend consumes |
-| `src/services/**` | backend | frontend | API client layer |
-| `server/routes/**` | backend | qa | API routes |
-| `server/controllers/**` | backend | qa | Request handlers |
-| `server/services/**` | backend | qa | Business logic |
-| `server/middleware/**` | backend | — | Auth, validation, error handling |
-| `server/validators/**` | backend | — | Input validation schemas |
-| `prisma/**`, `db/**` | database | backend | Schema, migrations, seeds |
-| `src/models/**` | database | backend | Model definitions |
-| `Dockerfile`, `docker-compose*` | devops | — | Container config |
-| `.dockerignore` | devops | — | Build exclusions |
-| `scripts/**` | devops | — | Deployment, backup, utility scripts |
-| `Makefile` | devops | — | Task runner |
-| `.env.example` | devops | backend | Env var documentation |
-| `nginx.conf`, `Caddyfile` | devops | — | Reverse proxy |
-| `tests/**`, `**/*.test.*`, `**/*.spec.*` | qa | — | All test files |
-| `e2e/**` | qa | — | End-to-end tests |
-| `fixtures/**` | qa | — | Test data |
-| `public/**` | frontend | — | Static assets |
+The orchestrator determines the agent for a task based on:
 
-## Multi-agent tasks
+1. **Explicit assignment** — task-breakdown.md says `Agent: frontend`
+2. **File pattern match** — the task description mentions files that an agent owns
+3. **Task type inference** — "add API endpoint" → backend, "create screen" → mobile/frontend
 
-Some tasks require coordinated work from multiple agents. The orchestrator handles sequencing:
+### Universal file patterns (all project types)
 
-| Task type | Agent sequence | Why |
-|-----------|---------------|-----|
-| New API endpoint + UI | database → backend → frontend → qa | Schema first, then API, then UI, then tests |
-| New feature (full stack) | database → backend → frontend → qa | Same flow, larger scope |
-| Database schema change | database → backend → qa | Schema, update queries, update tests |
-| New page/screen (no API change) | frontend → qa | UI only, test it |
-| Infrastructure change | devops | Solo, verify with health check |
-| Bug fix (backend) | backend → qa | Fix, then write regression test |
-| Bug fix (frontend) | frontend → qa | Fix, then write regression test |
+| File pattern | Primary agent | Secondary |
+|-------------|---------------|-----------|
+| `Dockerfile`, `docker-compose*` | devops | — |
+| `Makefile`, `scripts/**` | devops | — |
+| `.env.example` | devops | — |
+| `tests/**`, `**/*.test.*`, `**/*.spec.*` | qa | — |
+| `e2e/**` | qa | — |
+| `README.md`, `docs/**` | library (if active), else devops | — |
+| `CHANGELOG.md` | library (if active), else devops | — |
+
+### Web patterns
+
+| File pattern | Primary agent | Secondary |
+|-------------|---------------|-----------|
+| `src/components/**` | frontend | qa |
+| `src/pages/**`, `src/app/**` | frontend | — |
+| `src/hooks/**`, `src/stores/**` | frontend | — |
+| `src/styles/**`, `src/assets/**` | frontend | — |
+| `src/types/**` | backend | frontend |
+| `src/services/**` | backend | frontend |
+| `server/**` | backend | qa |
+| `prisma/**`, `db/**` | database | backend |
+
+### CLI patterns
+
+| File pattern | Primary agent | Secondary |
+|-------------|---------------|-----------|
+| `src/cli/**`, `src/commands/**` | cli | qa |
+| `src/args/**`, `src/output/**` | cli | — |
+| `bin/**`, `completions/**` | cli | — |
+
+### Desktop patterns
+
+| File pattern | Primary agent | Secondary |
+|-------------|---------------|-----------|
+| `src/main/**`, `src/preload/**` | desktop | — |
+| `src/ipc/**`, `src/tray/**`, `src/menu/**` | desktop | — |
+| `src/platform/**` | desktop | — |
+| `ios/**`, `android/**`, `resources/**` | desktop | — |
+
+### Mobile patterns
+
+| File pattern | Primary agent | Secondary |
+|-------------|---------------|-----------|
+| `src/screens/**` | mobile | qa |
+| `src/navigation/**` | mobile | — |
+| `src/native/**`, `src/permissions/**` | mobile | — |
+| `ios/**`, `android/**` | mobile | — |
+
+### Library patterns
+
+| File pattern | Primary agent | Secondary |
+|-------------|---------------|-----------|
+| `src/lib/**`, `src/index.*` | library | qa |
+| `src/errors/**`, `src/constants/**` | library | — |
+| `examples/**`, `benchmarks/**` | library | — |
+
+### Data patterns
+
+| File pattern | Primary agent | Secondary |
+|-------------|---------------|-----------|
+| `src/pipelines/**` | data | qa |
+| `src/extractors/**`, `src/loaders/**` | data | — |
+| `src/transformers/**`, `src/validators/**` | data | — |
+| `src/jobs/**`, `src/schemas/**` | data | — |
+
+## Multi-agent task sequencing
+
+| Task type | Sequence |
+|-----------|----------|
+| New web feature (fullstack) | database → backend → frontend → qa |
+| New API endpoint | database → backend → qa |
+| New CLI command | cli → qa |
+| New screen (mobile) | mobile → frontend → qa |
+| New desktop feature | desktop → frontend → qa |
+| New pipeline stage | data → database → qa |
+| New library function | library → qa |
+| Infrastructure change | devops (solo) |
+| Bug fix (any layer) | [affected agent] → qa |
 
 ## Conflict resolution
 
-If two agents need to modify the same file:
-1. The **primary agent** (per the table above) makes the change
-2. The secondary agent reviews and adjusts if needed
-3. If they disagree, the orchestrator flags it to the user
+If two agents need the same file:
+1. Primary agent (per table above) makes the change
+2. Secondary agent reviews and adjusts
+3. Conflicts → orchestrator flags to user
 
-Never: two agents editing the same file at the same time. Always sequential.
+Never: two agents editing the same file simultaneously. Always sequential.

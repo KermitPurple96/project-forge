@@ -64,6 +64,16 @@ Let the user talk freely. Then ask targeted follow-ups for anything they didn't 
 
 ```
 □ What is the product? (one sentence)
+□ What type of project? (determines which agents and templates are active)
+    - Web app (fullstack)
+    - Web app (frontend only, external API)
+    - API / backend service (no UI)
+    - CLI tool
+    - Desktop app (Electron, Tauri, native)
+    - Mobile app (React Native, Flutter, native)
+    - Library / package (npm, PyPI, crate)
+    - Data pipeline / ETL
+    - Combination (e.g. web + mobile sharing a backend)
 □ What problem does it solve?
 □ Who is the primary user? (specific persona, not "everyone")
 □ Who is the secondary user? (if any)
@@ -73,6 +83,28 @@ Let the user talk freely. Then ask targeted follow-ups for anything they didn't 
 □ Timeline (hobby/no deadline / 1 month / 3 months / specific date)
 □ Team (solo / 2-3 devs / team / hiring)
 □ Any technical constraints? (must use X, must integrate with Y)
+□ Legal/compliance? (GDPR, HIPAA, accessibility requirements)
+```
+
+**The project type determines everything downstream:**
+- Which agents are generated (see `agents/agent-map.md`)
+- Which templates are relevant (CLI tools don't need `responsive-strategy.md`)
+- Which stack options are recommended
+- How the pipeline checkpoints work
+
+**Templates that are SKIPPED per project type:**
+
+| Template | Skip when |
+|----------|-----------|
+| `2-design/*` (all) | CLI tool, API only, data pipeline, library |
+| `information-architecture.md` | CLI tool, data pipeline, library |
+| `wireframes.md` | CLI tool, API only, data pipeline, library |
+| `responsive-strategy.md` | CLI tool, desktop, API only, data pipeline, library |
+| `i18n-strategy.md` | Unless explicitly multilingual |
+| `api-contract.md` | CLI tool (unless it has a server), library |
+| `user-flows.md` | Library, data pipeline |
+
+Don't ask about skipped templates — just don't generate them.
 □ Legal/compliance? (GDPR, HIPAA, accessibility requirements)
 ```
 
