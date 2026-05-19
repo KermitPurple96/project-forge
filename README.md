@@ -30,49 +30,41 @@ Every software project goes through phases. Project Forge gives you a structured
 | **Command** | 🤖 | An automated command Claude executes. Lives in `/commands/` |
 | **Mixed** | 🔀 | Claude generates a draft, you validate and adjust |
 
-## Quick start
-
-### 1. Start a new project
-
-Copy the templates to your project and fill them in order:
+## Quick start — 4 commands to go from idea to production
 
 ```bash
-cp -r templates/ my-project/.forge/
+/forge-init          # Interactive wizard: define your project (~30-60 min)
+/continue            # Build the next task (repeat until done)
+/deploy staging      # Deploy to staging and validate
+/deploy production   # Go live
 ```
 
-### 2. Fill in discovery & definition
+That's it. Everything else is optional.
 
-Start with the basics — open each template and answer the questions:
+### The three speeds of development
 
-```
-my-project/.forge/0-discovery/vision.md          # What are you building and why?
-my-project/.forge/0-discovery/target-users.md     # Who is it for?
-my-project/.forge/1-definition/requirements.md    # What does it need to do?
-my-project/.forge/1-definition/user-roles.md      # Who can do what?
-```
+| Phase | User effort | AI effort | Time |
+|-------|------------|-----------|------|
+| **Init** (`forge-init`) | High — answer questions, make decisions | Research, generate templates, scaffold | 30-60 min |
+| **Development** (`continue`, `fix`, `status`) | Low — just say "continue" or correct things | Full — implement, test, commit, repeat | Hours-days |
+| **Deploy** (`deploy staging/production`) | Minimal — confirm production deploy | Full — build, validate, deploy, monitor | Minutes |
 
-### 3. Generate agents and configure pipeline
+### All commands at a glance
 
-```bash
-# Generate stack-specific agents (frontend, backend, db, infra)
-claude "Follow the instructions in commands/development/agent-gen.md"
-
-# Configure automation level in:
-my-project/.forge/4-planning/pipeline-config.md
-```
-
-### 4. Run the orchestrator
-
-The orchestrator automates the entire development cycle:
-
-```bash
-# Start developing — orchestrator handles tasks, tests, commits
-claude "Follow the instructions in commands/development/orchestrator.md"
-
-# Or run specific phases manually
-claude "Follow the instructions in commands/quality/e2e-test.md"
-claude "Follow the instructions in commands/quality/code-review.md"
-```
+| Command | What it does |
+|---------|-------------|
+| `/forge-init` | Guided wizard → fills all templates, generates agents, scaffolds project |
+| `/continue` | Implements next task from roadmap, tests, commits |
+| `/continue sprint` | Runs all remaining tasks in current sprint (full-auto) |
+| `/fix "description"` | Quick correction → fix, test, commit |
+| `/status` | Shows progress, current sprint, what's next |
+| `/orchestrator` | Advanced control over sprint execution |
+| `/deploy staging` | Validate + deploy to staging |
+| `/deploy production` | Gate check + deploy to production |
+| `/deploy --rollback` | Rollback to previous version |
+| `/code-review` | Review code changes for bugs and security |
+| `/e2e-test` | Run strict end-to-end verification |
+| `/secrets-scan` | Scan for leaked secrets in code and git history |
 
 ### Automation pipeline
 
@@ -107,101 +99,35 @@ claude "Follow the instructions in commands/quality/code-review.md"
 project-forge/
 ├── README.md
 ├── docs/
-│   └── framework.md              # Complete lifecycle map
-├── templates/                    # 📝 Documents you fill in
-│   ├── 0-discovery/
-│   │   ├── vision.md
-│   │   ├── target-users.md
-│   │   ├── competitive-analysis.md
-│   │   └── constraints.md
-│   ├── 1-definition/
-│   │   ├── requirements.md
-│   │   ├── user-roles.md
-│   │   ├── information-architecture.md
-│   │   ├── user-flows.md
-│   │   ├── data-model.md
-│   │   ├── api-contract.md
-│   │   └── wireframes.md
-│   ├── 2-design/
-│   │   ├── brand-identity.md
-│   │   ├── design-tokens.md
-│   │   ├── component-library.md
-│   │   ├── responsive-strategy.md
-│   │   ├── accessibility-spec.md
-│   │   └── i18n-strategy.md
-│   ├── 3-architecture/
-│   │   ├── stack-selection.md
-│   │   ├── project-structure.md
-│   │   ├── infra-architecture.md
-│   │   ├── auth-architecture.md
-│   │   ├── integration-map.md
-│   │   ├── error-handling-strategy.md
-│   │   ├── security-baseline.md
-│   │   ├── testing-strategy.md
-│   │   └── ai-agents-design.md
-│   └── 4-planning/
-│       ├── roadmap.md
-│       ├── task-breakdown.md
-│       ├── mvp-definition.md
-│       ├── risk-register.md
-│       ├── definition-of-done.md
-│       └── pipeline-config.md
-└── commands/                     # 🤖 Automated commands
-    ├── development/
-    │   ├── orchestrator.md
-    │   ├── agent-gen.md
-    │   ├── context-init.md
-    │   ├── scaffold.md
-    │   ├── develop.md
-    │   ├── db-migrate.md
-    │   ├── seed-data.md
-    │   ├── refactor.md
-    │   ├── docs-gen.md
-    │   └── changelog.md
-    ├── quality/
-    │   ├── e2e-test.md
-    │   ├── code-review.md
-    │   ├── unit-tests.md
-    │   ├── integration-tests.md
-    │   ├── security-review.md
-    │   ├── performance-audit.md
-    │   ├── accessibility-audit.md
-    │   ├── dependency-audit.md
-    │   ├── consistency-check.md
-    │   └── test-coverage-report.md
-    ├── staging/
-    │   ├── env-config.md
-    │   ├── ci-cd-pipeline.md
-    │   ├── docker-setup.md
-    │   ├── db-migration-plan.md
-    │   ├── smoke-tests.md
-    │   ├── load-testing.md
-    │   ├── staging-deploy.md
-    │   └── pre-launch-checklist.md
-    ├── production/
-    │   ├── prod-deploy.md
-    │   ├── monitoring-setup.md
-    │   ├── backup-strategy.md
-    │   ├── incident-runbook.md
-    │   ├── rollback.md
-    │   └── hotfix.md
-    ├── post-launch/
-    │   ├── analytics-setup.md
-    │   ├── feedback-loop.md
-    │   ├── retrospective.md
-    │   ├── version-bump.md
-    │   ├── deprecation-plan.md
-    │   └── tech-debt-audit.md
-    └── transversal/
-        ├── context-sync.md
-        ├── progress-report.md
-        ├── decision-log.md
-        ├── debug.md
-        ├── explain.md
-        ├── standards-enforce.md
-        ├── git-commit.md
-        ├── pr-description.md
-        └── secrets-scan.md
+│   └── framework.md
+├── commands/                         # 🤖 Automated commands
+│   ├── forge-init.md                 # 🚀 Project wizard (start here)
+│   ├── deploy.md                     # 🚀 Staging & production deploy
+│   ├── development/
+│   │   ├── orchestrator.md           # Sprint execution engine
+│   │   ├── agent-gen.md              # Generate stack-specific agents
+│   │   ├── continue.md              # Continue next task
+│   │   ├── fix.md                   # Quick corrections
+│   │   ├── status.md                # Project progress
+│   │   ├── scaffold.md, context-init.md, develop.md
+│   │   ├── db-migrate.md, seed-data.md, refactor.md
+│   │   └── docs-gen.md, changelog.md
+│   ├── quality/
+│   │   ├── e2e-test.md, code-review.md
+│   │   ├── unit-tests.md, integration-tests.md
+│   │   ├── security-review.md, performance-audit.md
+│   │   └── accessibility-audit.md, dependency-audit.md, ...
+│   ├── staging/                      # Pre-production
+│   ├── production/                   # Production ops
+│   ├── post-launch/                  # Post-launch iteration
+│   └── transversal/                  # Any-phase commands
+│       └── secrets-scan.md, debug.md, progress-report.md, ...
+└── templates/                        # 📝 User fills in
+    ├── 0-discovery/                  # Vision, users, constraints
+    ├── 1-definition/                 # Requirements, roles, data model, API
+    ├── 2-design/                     # Brand, colors, components
+    ├── 3-architecture/               # Stack, infra, auth, security
+    └── 4-planning/                   # Roadmap, sprints, pipeline config
 ```
 
 ## Contributing
