@@ -51,19 +51,54 @@ my-project/.forge/1-definition/requirements.md    # What does it need to do?
 my-project/.forge/1-definition/user-roles.md      # Who can do what?
 ```
 
-### 3. Use commands during development
-
-Commands are designed to be used with Claude Code or as prompts in Claude:
+### 3. Generate agents and configure pipeline
 
 ```bash
-# Initialize project context
-claude "Follow the instructions in commands/development/scaffold.md"
+# Generate stack-specific agents (frontend, backend, db, infra)
+claude "Follow the instructions in commands/development/agent-gen.md"
 
-# Run e2e tests
+# Configure automation level in:
+my-project/.forge/4-planning/pipeline-config.md
+```
+
+### 4. Run the orchestrator
+
+The orchestrator automates the entire development cycle:
+
+```bash
+# Start developing — orchestrator handles tasks, tests, commits
+claude "Follow the instructions in commands/development/orchestrator.md"
+
+# Or run specific phases manually
 claude "Follow the instructions in commands/quality/e2e-test.md"
-
-# Code review
 claude "Follow the instructions in commands/quality/code-review.md"
+```
+
+### Automation pipeline
+
+```
+                    ┌─────────────────┐
+                    │   Orchestrator   │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+        ┌──────────┐  ┌──────────┐  ┌──────────┐
+        │ frontend │  │ backend  │  │ database │
+        │  agent   │  │  agent   │  │  agent   │
+        └────┬─────┘  └────┬─────┘  └────┬─────┘
+             │              │              │
+             ▼              ▼              ▼
+        ┌─────────────────────────────────────┐
+        │  After each task:                   │
+        │  unit-tests → auto-commit           │
+        ├─────────────────────────────────────┤
+        │  After each sprint:                 │
+        │  e2e → code-review → integration    │
+        ├─────────────────────────────────────┤
+        │  After each milestone:              │
+        │  security → perf → changelog → tag  │
+        └─────────────────────────────────────┘
 ```
 
 ## Repository structure
@@ -109,9 +144,12 @@ project-forge/
 │       ├── task-breakdown.md
 │       ├── mvp-definition.md
 │       ├── risk-register.md
-│       └── definition-of-done.md
+│       ├── definition-of-done.md
+│       └── pipeline-config.md
 └── commands/                     # 🤖 Automated commands
     ├── development/
+    │   ├── orchestrator.md
+    │   ├── agent-gen.md
     │   ├── context-init.md
     │   ├── scaffold.md
     │   ├── develop.md
