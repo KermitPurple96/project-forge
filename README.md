@@ -4,6 +4,14 @@ A framework to build any software project from idea to production using Claude.
 
 **Project Forge** is a collection of **commands** (automated by Claude) and **templates** (guided documents you fill in) that cover the entire software development lifecycle — from "I have an idea" to "it's deployed and monitored".
 
+## 3 commands to rule them all
+
+```bash
+/forge-init        # Interactive wizard: idea → architecture → plan (you talk, Claude builds)
+/forge-dev         # Development autopilot: "continue" and Claude handles the rest
+/forge-deploy      # Staging → production with one command
+```
+
 ## How it works
 
 Every software project goes through phases. Project Forge gives you a structured path through all of them:
@@ -30,13 +38,12 @@ Every software project goes through phases. Project Forge gives you a structured
 | **Command** | 🤖 | An automated command Claude executes. Lives in `/commands/` |
 | **Mixed** | 🔀 | Claude generates a draft, you validate and adjust |
 
-## Quick start — 4 commands to go from idea to production
+## Quick start — 3 commands to go from idea to production
 
 ```bash
 /forge-init          # Interactive wizard: define your project (~30-60 min)
-/continue            # Build the next task (repeat until done)
-/deploy staging      # Deploy to staging and validate
-/deploy production   # Go live
+/forge-dev           # Build, test, fix — autopilot development
+/forge-deploy        # Staging → production
 ```
 
 That's it. Everything else is optional.
@@ -46,22 +53,27 @@ That's it. Everything else is optional.
 | Phase | User effort | AI effort | Time |
 |-------|------------|-----------|------|
 | **Init** (`forge-init`) | High — answer questions, make decisions | Research, generate templates, scaffold | 30-60 min |
-| **Development** (`continue`, `fix`, `status`) | Low — just say "continue" or correct things | Full — implement, test, commit, repeat | Hours-days |
-| **Deploy** (`deploy staging/production`) | Minimal — confirm production deploy | Full — build, validate, deploy, monitor | Minutes |
+| **Development** (`forge-dev`) | Low — just say "continue" or correct things | Full — implement, test, commit, repeat | Hours-days |
+| **Deploy** (`forge-deploy`) | Minimal — confirm production deploy | Full — build, validate, deploy, monitor | Minutes |
 
 ### All commands at a glance
 
 | Command | What it does |
 |---------|-------------|
 | `/forge-init` | Guided wizard → fills all templates, generates agents, scaffolds project |
-| `/continue` | Implements next task from roadmap, tests, commits |
-| `/continue sprint` | Runs all remaining tasks in current sprint (full-auto) |
-| `/fix "description"` | Quick correction → fix, test, commit |
-| `/status` | Shows progress, current sprint, what's next |
+| `/forge-dev` | Continues next task from roadmap, tests, commits |
+| `/forge-dev continue` | Same as above (default behavior) |
+| `/forge-dev fix "description"` | Quick correction → fix, test, commit |
+| `/forge-dev change "description"` | Modify something already built |
+| `/forge-dev test` | Run tests on current state |
+| `/forge-dev test sprint` | Run full sprint checkpoint |
+| `/forge-dev status` | Shows progress, current sprint, what's next |
+| `/forge-dev pause` | Save state and stop |
+| `/forge-deploy setup` | First-time environment and CI/CD configuration |
+| `/forge-deploy staging` | Validate + deploy to staging |
+| `/forge-deploy production` | Gate check + deploy to production |
+| `/forge-deploy rollback` | Rollback to previous version |
 | `/orchestrator` | Advanced control over sprint execution |
-| `/deploy staging` | Validate + deploy to staging |
-| `/deploy production` | Gate check + deploy to production |
-| `/deploy --rollback` | Rollback to previous version |
 | `/code-review` | Review code changes for bugs and security |
 | `/e2e-test` | Run strict end-to-end verification |
 | `/secrets-scan` | Scan for leaked secrets in code and git history |
@@ -102,14 +114,12 @@ project-forge/
 │   └── framework.md
 ├── commands/                         # 🤖 Automated commands
 │   ├── forge-init.md                 # 🚀 Project wizard (start here)
-│   ├── deploy.md                     # 🚀 Staging & production deploy
+│   ├── forge-dev.md                  # 🚀 Development autopilot
+│   ├── forge-deploy.md               # 🚀 Staging & production deploy
 │   ├── development/
 │   │   ├── orchestrator.md           # Sprint execution engine
 │   │   ├── agent-gen.md              # Generate stack-specific agents
-│   │   ├── continue.md              # Continue next task
-│   │   ├── fix.md                   # Quick corrections
-│   │   ├── status.md                # Project progress
-│   │   ├── scaffold.md, context-init.md, develop.md
+│   │   ├── context-init.md, scaffold.md, develop.md
 │   │   ├── db-migrate.md, seed-data.md, refactor.md
 │   │   └── docs-gen.md, changelog.md
 │   ├── quality/
@@ -122,7 +132,7 @@ project-forge/
 │   ├── post-launch/                  # Post-launch iteration
 │   └── transversal/                  # Any-phase commands
 │       └── secrets-scan.md, debug.md, progress-report.md, ...
-└── templates/                        # 📝 User fills in
+└── templates/                        # 📝 Generated by forge-init
     ├── 0-discovery/                  # Vision, users, constraints
     ├── 1-definition/                 # Requirements, roles, data model, API
     ├── 2-design/                     # Brand, colors, components

@@ -1,424 +1,354 @@
 # 🤖 Command: forge-init
 
-> The project initialization wizard. Guides the user through every decision needed to go from idea to development-ready. This is the ONLY command a user needs to run to start a new project.
+> The single entry point for starting a new project. An interactive wizard that walks the user through every decision, does research, and generates all templates automatically.
 
 ## Invocation
 
 ```
-/forge-init                        # Start full wizard from scratch
-/forge-init --resume               # Resume a partially completed init
-/forge-init --from brief.md        # Start from a project brief document
-/forge-init --skip-research        # Skip competitive analysis (faster)
-/forge-init --minimal              # Only ask essential questions (MVP mode)
+/forge-init                    # Start the full wizard from scratch
+/forge-init --resume           # Resume an interrupted init (reads .forge/ state)
+/forge-init --phase 2          # Jump to a specific phase (if previous phases are filled)
+/forge-init --fast             # Quick mode: skip optional sections, use defaults
+/forge-init --from brief.md    # Start from a project brief document the user already wrote
 ```
 
-## What this command produces
+## The problem this solves
 
-By the end of `forge-init`, the project will have:
+Without this command, the user has to:
+1. Open 25+ template files
+2. Read each one
+3. Fill them in manually
+4. Hope they didn't miss anything
+5. Hope the answers are consistent across templates
 
-```
-.forge/
-├── 0-discovery/       ✅ All templates filled
-├── 1-definition/      ✅ All templates filled
-├── 2-design/          ✅ All templates filled
-├── 3-architecture/    ✅ All templates filled
-├── 4-planning/        ✅ Roadmap, sprints, pipeline configured
-├── agents/            ✅ Stack-specific agents generated
-└── init-complete      ✅ Marker file
-```
-
-Plus a scaffolded project ready for `/orchestrator` or `/continue`.
+With this command:
+1. User answers questions in conversation
+2. Claude fills all templates automatically
+3. Claude does research where needed
+4. Claude ensures consistency across all decisions
+5. Everything is generated in one session
 
 ---
 
 ## Instructions for Claude
 
-### Overview of the flow
+### Overview: the 7 conversations
+
+The wizard is structured as 7 sequential conversations. Each one covers a group of templates. After each conversation, Claude writes the templates and confirms before moving on.
+
+The user can stop at any point — progress is saved to `.forge/` and resumed with `--resume`.
 
 ```
-Phase A: UNDERSTAND (5-10 min)
-  → What are you building? Who for? Why?
-  
-Phase B: RESEARCH (2-5 min, automated)
-  → Competitive analysis, tech research
-  
-Phase C: DEFINE (10-15 min)
-  → Features, roles, data model, API, flows
-  
-Phase D: DESIGN (5-10 min)
-  → Brand, colors, components, responsive
-  
-Phase E: ARCHITECT (5-10 min)
-  → Stack, infrastructure, auth, integrations
-  
-Phase F: PLAN (2-5 min, mostly automated)
-  → Roadmap, sprints, pipeline, agents
-  
-Phase G: SCAFFOLD (automated)
-  → Generate project, install deps, initial commit
-```
-
-Total: ~30-60 minutes of user interaction, then development-ready.
-
----
-
-### Phase A: UNDERSTAND
-
-> Goal: Go from vague idea to clear project definition.
-
-Start with an open question, then drill down. Don't dump a form — have a conversation.
-
-**Opening:**
-```
-"Tell me about your project. What do you want to build, and what problem does it solve?"
-```
-
-Wait for the user's response. Then ask follow-ups based on what's missing:
-
-**Round 1 — Vision** (only ask what they didn't already cover):
-- What type of product? (web app, mobile app, API, CLI, SaaS platform, marketplace, tool...)
-- Who's going to use it? (developers, businesses, consumers, internal team...)
-- What's the one thing it MUST do well?
-- Is there a deadline or budget constraint?
-
-**Round 2 — Scope** (based on their answers):
-- Is this a solo project or team?
-- MVP first or full product?
-- Public or internal?
-- Monetization? (free, freemium, subscription, one-time, none)
-
-**Round 3 — References** (quick):
-- Any products you want it to feel like? (UI inspiration, competitors, "like X but for Y")
-- Any tech preferences or requirements? (must use React, must be Python, etc.)
-
-**Rules for this phase:**
-- Ask 2-3 questions at a time MAX — don't overwhelm
-- Adapt based on answers — if they're technical, skip basic questions
-- If they provide a brief document (`--from brief.md`), extract answers and only ask gaps
-- Fill `vision.md`, `target-users.md`, `constraints.md` from conversation
-
----
-
-### Phase B: RESEARCH (automated)
-
-> Goal: Understand the competitive landscape and technical options.
-
-Run this automatically after Phase A. Tell the user:
-```
-"Let me research the landscape for a few minutes..."
-```
-
-**B.1 — Competitive analysis:**
-- Search for similar products/solutions
-- Analyze 3-5 competitors: features, pricing, weaknesses
-- Identify the user's differentiator
-- Fill `competitive-analysis.md`
-
-**B.2 — Technical research:**
-- Research best stack options for this type of project
-- Research key libraries/services needed (auth, payments, email, etc.)
-- Research hosting options appropriate for scale and budget
-- Note findings for Phase E
-
-**B.3 — Present findings:**
-```
-"Here's what I found:
-- 3 main competitors: [X], [Y], [Z]. Your differentiator is [...]
-- For this type of project, I'd recommend [stack options]. Here's why..."
-```
-
-Ask user if they want to adjust direction based on findings.
-
----
-
-### Phase C: DEFINE (interactive)
-
-> Goal: Turn the vision into concrete, buildable requirements.
-
-**C.1 — Requirements gathering:**
-
-Ask the user to describe the main features. Use follow-up questions to extract:
-- User stories: "As a [role], I want [action] so that [benefit]"
-- Classify as: MVP (must-have) vs v1.0 (important) vs future (nice-to-have)
-- Fill `requirements.md`
-
-```
-"Let's map out the features. Tell me what a user should be able to do, 
-and I'll organize them by priority. Start with the most important one."
-```
-
-**C.2 — User roles:**
-
-Based on the requirements, propose roles:
-```
-"Based on what you described, I see these roles:
-- Admin: manages everything
-- User: the main persona, does [X]
-- Guest: can view but not create
-Does that match your thinking? Any roles missing?"
-```
-
-Generate permission matrix. Fill `user-roles.md`.
-
-**C.3 — Pages & navigation:**
-
-Based on requirements and roles, propose the information architecture:
-```
-"Here's the site map I'd suggest:
-/ → Landing page
-/dashboard → Main view after login
-/dashboard/[feature] → Each main feature
-/settings → User preferences
-/admin → Admin panel (admin only)
-
-Does this make sense? Any pages missing?"
-```
-
-Fill `information-architecture.md`.
-
-**C.4 — User flows:**
-
-For the 3-5 most critical flows, walk through step by step:
-```
-"Let's trace the main user journey:
-1. User arrives at landing page
-2. Signs up with email
-3. Sees onboarding wizard
-4. Creates their first [thing]
-5. ...
-Anything you'd change?"
-```
-
-Fill `user-flows.md`.
-
-**C.5 — Data model (automated from requirements):**
-
-Generate the data model from everything gathered:
-```
-"Based on your features, here's the data model I'd suggest:
-- User (id, email, name, role, created_at)
-- [Entity] (id, user_id, title, ...)
-- [Entity] (...)
-
-Relationships:
-- User has many [entities]
-- [Entity] belongs to [entity]
-
-Does this look right?"
-```
-
-Fill `data-model.md`.
-
-**C.6 — API contract (automated):**
-
-Generate from data model + requirements:
-```
-"And here are the API endpoints:
-- POST /auth/register
-- POST /auth/login
-- GET /[resources]
-- POST /[resources]
-- ...
-"
-```
-
-Fill `api-contract.md`. Wireframes are optional — ask if they want to describe any screens.
-
----
-
-### Phase D: DESIGN (interactive)
-
-> Goal: Define the visual identity and component needs.
-
-**D.1 — Brand basics:**
-```
-"Let's define the look and feel.
-- Do you have a name yet? 
-- How should it feel? (e.g., professional, playful, minimal, bold)
-- Any colors in mind, or should I suggest a palette?"
-```
-
-**D.2 — Color palette (automated if no preference):**
-
-If user has no colors, generate a palette based on:
-- Industry (fintech → blues, health → greens, creative → vibrant)
-- Tone (professional → muted, playful → saturated)
-- Accessibility (ensure WCAG AA contrast)
-
-Present 2-3 palette options:
-```
-"Here are 3 palette options:
-
-Option A (Clean & Professional):
-  Primary: #2563EB  Secondary: #7C3AED  
-  
-Option B (Warm & Approachable):
-  Primary: #EA580C  Secondary: #0891B2
-
-Option C (Minimal & Modern):
-  Primary: #18181B  Secondary: #6366F1
-
-Which direction appeals to you? Or mix and match."
-```
-
-Fill `design-tokens.md`.
-
-**D.3 — Component inventory (automated):**
-
-Based on the pages and features defined, auto-generate the component checklist:
-```
-"Based on your features, you'll need these components: [list].
-I'll generate the full component library spec."
-```
-
-Fill `component-library.md`.
-
-**D.4 — Quick decisions:**
-- Responsive? (mobile-first? which devices?)
-- Dark mode?
-- Multi-language?
-- Accessibility level? (recommend AA)
-
-Fill remaining design templates.
-
----
-
-### Phase E: ARCHITECT (interactive + automated)
-
-> Goal: Lock in technical decisions.
-
-**E.1 — Stack recommendation:**
-
-Based on ALL previous context, recommend a stack with reasoning:
-```
-"For a [type of app] with [these requirements], here's what I recommend:
-
-Frontend: Next.js + Tailwind + Zustand
-  → Why: SSR for SEO, rapid UI with Tailwind, simple state management
-
-Backend: Node.js + Express (or built into Next.js API routes)
-  → Why: Same language as frontend, fast to develop, your team knows JS
-
-Database: PostgreSQL + Prisma
-  → Why: Relational data model, great ORM, easy migrations
-
-Hosting: Vercel (frontend) + Railway (backend + DB)
-  → Why: Free tier to start, easy scaling, git-based deploys
-
-Do you agree, or want to change anything?"
-```
-
-If user has strong preferences (from Phase A), respect them.
-
-Fill `stack-selection.md`.
-
-**E.2 — Auto-generate remaining architecture:**
-- `project-structure.md` — from stack
-- `auth-architecture.md` — from user-roles + stack
-- `infra-architecture.md` — from stack + hosting
-- `integration-map.md` — from requirements (payments, email, etc.)
-- `error-handling-strategy.md` — from stack best practices
-- `testing-strategy.md` — from stack + project type
-- `security-baseline.md` — standard template
-
-Present a summary, ask for approval.
-
----
-
-### Phase F: PLAN (mostly automated)
-
-> Goal: Break everything into executable sprints.
-
-**F.1 — Generate roadmap:**
-- Phase 1: MVP (from mvp-definition)
-- Phase 2: v1.0 (important features)
-- Phase 3: Growth (nice-to-have + scale)
-
-**F.2 — Generate task breakdown with sprints:**
-- Break MVP into atomic tasks
-- Group into sprints (max 8 tasks each)
-- Assign agents to each task
-- Estimate hours
-
-**F.3 — Configure pipeline:**
-```
-"How do you want to run development?
-
-For Sprint 1, I'd suggest semi-auto (you approve each task) since 
-it's the foundation. After that, we can go full-auto. Sound good?"
-```
-
-Fill `pipeline-config.md`.
-
-**F.4 — Generate agents:**
-Run `agent-gen` automatically based on the chosen stack.
-
----
-
-### Phase G: SCAFFOLD (fully automated)
-
-> Goal: Generate the actual project and be ready to develop.
-
-1. Run `scaffold` command — create project from architecture
-2. Initial commit: `feat: initial project scaffold [forge-init]`
-3. Display final summary:
-
-```
-## 🔨 Project Forge — Init Complete
-
-### Your project: [name]
-[One-line description]
-
-### Stack
-Frontend: [X]  |  Backend: [Y]  |  Database: [Z]  |  Hosting: [W]
-
-### Roadmap
-- MVP: [N] tasks across [M] sprints (~[X]h estimated)
-- v1.0: [N] tasks across [M] sprints
-- Total: [N] tasks
-
-### Agents generated
-- frontend-agent (React + Tailwind)
-- backend-agent (Express + REST)
-- database-agent (PostgreSQL + Prisma)
-- infra-agent (Docker + GitHub Actions)
-
-### Next steps
-Run `/continue` to start Sprint 1, or `/orchestrator --plan` to review the plan first.
+Conversation 1: Vision & Users         → 0-discovery/*
+Conversation 2: Requirements & Flows   → 1-definition/*
+Conversation 3: Design & Identity      → 2-design/*
+Conversation 4: Architecture & Stack   → 3-architecture/*
+Conversation 5: Planning & Sprints     → 4-planning/*
+Conversation 6: Agent Generation       → .forge/agents/*
+Conversation 7: Review & Kickoff       → final validation
 ```
 
 ---
 
-## Minimal mode (`--minimal`)
+### Conversation 1: Vision & Users
 
-For quick prototypes, skip:
-- Competitive analysis
-- Detailed design (use defaults)
-- Accessibility/i18n specs
-- Risk register
+**Goal:** Understand WHAT they're building, WHO it's for, and WHAT constraints exist.
 
-Only ask: What + Who + Core features + Stack preference → scaffold.
-~10 minutes to development-ready.
+Start with an open question:
+
+> "Tell me about your project. What are you building and why?"
+
+Let the user talk freely. Then ask targeted follow-ups for anything they didn't cover. Don't ask everything at once — have a conversation.
+
+**Must-extract information:**
+
+```
+□ What is the product? (one sentence)
+□ What problem does it solve?
+□ Who is the primary user? (specific persona, not "everyone")
+□ Who is the secondary user? (if any)
+□ What does success look like in 6 months?
+□ What is this NOT? (explicit scope boundaries)
+□ Budget range (none / free tier only / <$50/mo / <$500/mo / enterprise)
+□ Timeline (hobby/no deadline / 1 month / 3 months / specific date)
+□ Team (solo / 2-3 devs / team / hiring)
+□ Any technical constraints? (must use X, must integrate with Y)
+□ Legal/compliance? (GDPR, HIPAA, accessibility requirements)
+```
+
+**Research step:** After the user describes their vision, search for:
+- Competitors / similar products
+- Common technical approaches
+- Potential pitfalls
+
+Present findings: "I found these similar products: [X, Y, Z]. Here's how they approach it and where they fall short. This could inform our differentiation."
+
+**Output:** Generate and write:
+- `templates/0-discovery/vision.md`
+- `templates/0-discovery/target-users.md`
+- `templates/0-discovery/competitive-analysis.md`
+- `templates/0-discovery/constraints.md`
+
+Show a summary and ask: "Does this capture your vision correctly? Anything to change before we move to requirements?"
 
 ---
 
-## Resume mode (`--resume`)
+### Conversation 2: Requirements & Flows
 
-If `forge-init` is interrupted:
-1. Read `.forge/` directory
-2. Identify which templates are filled vs empty
-3. Pick up from the first unfilled phase
-4. Skip completed phases
+**Goal:** Define WHAT the system does, WHO can do what, and HOW data flows.
+
+Start from the vision and generate a first draft:
+
+> "Based on your vision, here are the core features I think you need for MVP: [list]. What would you add, remove, or change?"
+
+**Must-extract information:**
+
+```
+□ Core features (MVP — ruthlessly minimal)
+□ v1.0 features (important but not launch-blocking)
+□ Future features (parking lot)
+□ User roles and what each can do
+□ Auth method (email/password, OAuth, magic link, invite-only)
+□ Main pages/screens the app needs
+□ For each page: purpose, tabs/sections, key actions
+□ The core user flow step by step (onboarding → main action → outcome)
+□ Key entities (what data exists: users, posts, orders, etc.)
+□ Relationships between entities
+□ API style preference (REST, GraphQL, tRPC) — or let Claude recommend
+```
+
+**Interactive approach:**
+
+For the data model, try this pattern:
+> "Let me describe the main things your app deals with. You have Users who [do X]. Each user can create [Y], which has [fields]. A [Y] belongs to one user but can be shared with... does that sound right?"
+
+Build the data model conversationally, not by asking "what are your entities?"
+
+For the page structure, try:
+> "Let me map out the screens I think you need:
+> - Landing page → Login/Register → Dashboard
+> - Dashboard has: [tab1], [tab2], [tab3]
+> - Settings: profile, billing, notifications
+> Does this match your mental model?"
+
+**Output:** Generate and write:
+- `templates/1-definition/requirements.md`
+- `templates/1-definition/user-roles.md`
+- `templates/1-definition/information-architecture.md`
+- `templates/1-definition/user-flows.md`
+- `templates/1-definition/data-model.md`
+- `templates/1-definition/api-contract.md`
+- `templates/1-definition/wireframes.md` (text-based descriptions)
 
 ---
 
-## Rules
+### Conversation 3: Design & Identity
 
-1. **Conversational, not a form** — adapt questions based on answers, skip what's already clear
-2. **2-3 questions at a time** — never dump 10 questions at once
-3. **Show your work** — when auto-generating (data model, stack), show the user and ask for approval
-4. **Research is real** — actually search the web for competitors and tech options
-5. **Opinionated defaults** — if the user says "I don't know", pick the best option and explain why
-6. **The output is complete** — when forge-init finishes, EVERY template in phases 0-4 is filled
-7. **Respect expertise** — if the user is technical, go faster and skip explanations
-8. **Don't lose context** — if the conversation is long, periodically summarize decisions made so far
+**Goal:** Define HOW it looks and feels.
+
+Start with mood, not specifics:
+
+> "What vibe should your app have? Some examples:
+> - Clean and minimal (like Notion, Linear)
+> - Bold and energetic (like Vercel, Stripe)
+> - Warm and friendly (like Slack, Headspace)
+> - Professional and serious (like Bloomberg, Salesforce)
+>
+> Or point me to a site/app you love the look of."
+
+**Must-extract information:**
+
+```
+□ Visual mood / inspiration (sites, apps, brands they like)
+□ Primary brand color (or let Claude suggest based on mood)
+□ Light mode, dark mode, or both?
+□ Typography preference (modern sans / classic serif / monospace-tech)
+□ Content density (spacious / balanced / compact)
+□ Mobile-first or desktop-first?
+□ Accessibility level (A / AA / AAA)
+□ Languages to support (just English? multi-language?)
+```
+
+**For aspects the user doesn't have opinions on**, don't ask — decide and explain:
+
+> "Since you want a clean, minimal look, I'll go with:
+> - Colors: deep blue primary (#1a365d), soft gray backgrounds
+> - Typography: Inter for UI, serif for marketing pages
+> - Spacing: generous (8px base grid)
+> - Border radius: medium (8px) for a friendly feel
+>
+> I can adjust any of these."
+
+**Research step:** If the user names inspiration sites, research their design patterns.
+
+**Output:** Generate and write:
+- `templates/2-design/brand-identity.md`
+- `templates/2-design/design-tokens.md`
+- `templates/2-design/component-library.md` (checklist based on features)
+- `templates/2-design/responsive-strategy.md`
+- `templates/2-design/accessibility-spec.md`
+- `templates/2-design/i18n-strategy.md`
+
+---
+
+### Conversation 4: Architecture & Stack
+
+**Goal:** Choose the TECHNOLOGY and STRUCTURE.
+
+**Don't ask "what framework do you want."** Instead, recommend based on everything learned so far:
+
+> "Based on what you need, here's the stack I recommend and why:
+>
+> **Frontend:** Next.js + Tailwind + shadcn/ui
+> → You need SEO (landing page), dynamic dashboard, and fast iteration. Next.js handles both. Tailwind + shadcn gives you a component library without building from scratch.
+>
+> **Backend:** Next.js API routes (or separate Express if you prefer)
+> → Your API is straightforward CRUD. Keeping it in Next.js simplifies deployment.
+>
+> **Database:** PostgreSQL + Prisma
+> → Your data is relational (users → posts → comments). Prisma gives you type-safe queries and easy migrations.
+>
+> **Hosting:** Vercel (frontend + API) + Supabase (DB)
+> → Stays within your free tier budget. Scales when needed.
+>
+> **Alternative I considered:** [X] — but ruled it out because [Y].
+>
+> Want to change anything?"
+
+**Must-extract information:**
+
+```
+□ Stack agreement or overrides from user
+□ Any existing code or systems to integrate with
+□ Third-party services needed (payments, email, maps, AI, etc.)
+□ Auth architecture (JWT, sessions, OAuth providers)
+□ Deployment strategy (serverless, containers, VPS)
+□ Monorepo vs multirepo
+```
+
+**Research step:** For any unfamiliar tech or integration, research:
+- Best libraries for the chosen stack
+- Common gotchas and pitfalls
+- Pricing and limits of services
+
+**Output:** Generate and write:
+- `templates/3-architecture/stack-selection.md`
+- `templates/3-architecture/project-structure.md`
+- `templates/3-architecture/infra-architecture.md`
+- `templates/3-architecture/auth-architecture.md`
+- `templates/3-architecture/integration-map.md`
+- `templates/3-architecture/error-handling-strategy.md`
+- `templates/3-architecture/security-baseline.md`
+- `templates/3-architecture/testing-strategy.md`
+- `templates/3-architecture/ai-agents-design.md` (only if project uses AI)
+
+---
+
+### Conversation 5: Planning & Sprints
+
+**Goal:** Turn everything into an executable plan.
+
+No questions needed here — Claude generates from the accumulated context:
+
+> "Here's your development plan. I've broken your MVP into 3 sprints:"
+>
+> **Sprint 1: Foundation** (5 tasks, ~12h)
+> - Database schema + migrations
+> - Auth system (register, login, JWT)
+> - Base layout + navigation
+> - ...
+>
+> **Sprint 2: Core features** (6 tasks, ~16h)
+> - [main feature CRUD]
+> - ...
+>
+> **Sprint 3: Polish & integration** (4 tasks, ~10h)
+> - ...
+>
+> "Each sprint, I'll run tests and review automatically. Want to adjust the grouping or priority?"
+
+**Output:** Generate and write:
+- `templates/4-planning/roadmap.md`
+- `templates/4-planning/task-breakdown.md` (with sprints and agent assignments)
+- `templates/4-planning/mvp-definition.md`
+- `templates/4-planning/risk-register.md`
+- `templates/4-planning/definition-of-done.md`
+- `templates/4-planning/pipeline-config.md`
+
+---
+
+### Conversation 6: Agent Generation
+
+**Goal:** Create project-specific agents.
+
+No questions — Claude runs `agent-gen` automatically based on the chosen stack:
+
+> "I'm generating your development agents based on your Next.js + Prisma + PostgreSQL stack..."
+
+Execute the `agent-gen` command. Show the result:
+
+> "Created 4 agents:
+> - **frontend-agent:** Next.js + Tailwind + shadcn/ui expert
+> - **backend-agent:** API routes + Prisma expert
+> - **database-agent:** PostgreSQL + Prisma schema expert
+> - **infra-agent:** Vercel + GitHub Actions expert
+>
+> Agent map written. Orchestrator is ready."
+
+---
+
+### Conversation 7: Review & Kickoff
+
+**Goal:** Final confirmation before development starts.
+
+Present a complete project summary:
+
+```
+## Project Summary: [Name]
+
+**Vision:** [one sentence]
+**Stack:** [frontend] + [backend] + [database] on [hosting]
+**Users:** [primary persona] + [secondary if any]
+**MVP scope:** [N features] across [N pages]
+**Plan:** [N sprints], estimated [N hours]
+**Automation:** [mode] with auto-commit and auto-tests
+
+### Templates generated: 25/25 ✅
+### Agents created: 4 ✅
+### Pipeline configured ✅
+
+Ready to start development?
+→ Run `/orchestrator` to begin Sprint 1
+→ Run `/forge-dev` for simplified development mode
+```
+
+---
+
+## Conversation style rules
+
+1. **Ask one question at a time** unless they're tightly related
+2. **Propose, don't interrogate** — "I'd suggest X because Y. Sound right?" beats "What do you want for X?"
+3. **Research before recommending** — don't guess at competitors, tech choices, or pricing. Look it up.
+4. **Defaults are your friend** — for anything the user doesn't care about, pick a sensible default and say so
+5. **Summarize after each conversation** — show what you captured before writing templates
+6. **Let the user skip** — "I don't care, you choose" is a valid answer. Respect it.
+7. **Save progress continuously** — write templates after each conversation, not at the end
+8. **Be specific, not generic** — "Your landing page needs a hero, pricing section, and FAQ" not "What pages do you need?"
+
+## State file
+
+After each conversation, write progress to `.forge/init-state.md`:
+
+```markdown
+# Init State
+
+- [x] Conversation 1: Vision & Users (completed 2026-05-19)
+- [x] Conversation 2: Requirements & Flows (completed 2026-05-19)
+- [ ] Conversation 3: Design & Identity
+- [ ] Conversation 4: Architecture & Stack
+- [ ] Conversation 5: Planning & Sprints
+- [ ] Conversation 6: Agent Generation
+- [ ] Conversation 7: Review & Kickoff
+```
+
+This enables `--resume` to pick up where it left off.
