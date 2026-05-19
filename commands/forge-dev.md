@@ -10,6 +10,8 @@
 /forge-dev status              # Show what's done, what's next
 /forge-dev fix "description"   # Fix something the user noticed
 /forge-dev change "description"# Change something already built
+/forge-dev refactor [scope]    # Improve code quality without changing behavior
+/forge-dev hotfix "description"# Emergency fix: branch from prod, fix, deploy, merge back
 /forge-dev test                # Run tests on current state
 /forge-dev test sprint         # Run full sprint test suite
 /forge-dev review              # Code review of recent changes
@@ -76,6 +78,26 @@
 3. Implements the change
 4. Runs tests
 5. Commits with appropriate message
+
+### On `refactor [scope]`
+
+1. If scope provided (file, module, feature), focus there. Otherwise scan full codebase.
+2. Analyze for: duplicated code, functions >50 lines, files >300 lines, deep nesting, poor naming, dead code, missing types.
+3. Prioritize by impact: what changes improve readability the most?
+4. Refactor one thing at a time, running tests after each change.
+5. Never change behavior — tests must pass without modification.
+6. Commit: `refactor(scope): description`
+
+### On `hotfix "description"`
+
+1. Create hotfix branch: `git checkout -b hotfix/[description] main`
+2. Implement the minimal fix (smallest possible change)
+3. Write test that reproduces the bug
+4. Run full test suite
+5. Deploy to staging, run smoke-tests
+6. If clean → deploy to production (via `forge-deploy production`)
+7. Merge back to development branch
+8. Hotfixes are MINIMAL — no refactoring, no new features
 
 ### On `test`
 

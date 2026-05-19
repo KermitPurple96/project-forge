@@ -26,8 +26,10 @@ on_task_complete:
 ```yaml
 on_sprint_complete:
   - e2e-test            # Tests end-to-end del sprint completo
-  - code-review         # Review de todos los commits del sprint
+  - code-review         # Review de todos los commits (incluye consistency + standards)
   - integration-tests   # Tests de integración entre componentes
+  - accessibility-check # Contraste, ARIA, keyboard nav, lectores pantalla
+  - test-coverage       # Reporte de coverage, identifica zonas sin cubrir
   - progress-report     # Genera reporte de progreso del sprint
   - git-tag             # Tag: sprint-{N}-complete
 ```
@@ -38,8 +40,10 @@ on_sprint_complete:
 on_milestone_complete:
   - security-review     # Auditoría de seguridad completa
   - performance-audit   # Análisis de rendimiento
+  - load-testing        # Tests de carga: baseline, normal, peak, spike
   - dependency-audit    # Scan de dependencias
   - secrets-scan        # Verificación de secrets
+  - tech-debt-scan      # TODOs, código muerto, duplicados, complejidad
   - docs-gen            # Actualiza documentación
   - changelog           # Genera changelog del milestone
   - version-bump        # Incrementa versión (minor para milestone, major para release)
