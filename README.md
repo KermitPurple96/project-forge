@@ -114,6 +114,13 @@ project-forge/
 ├── README.md
 ├── docs/
 │   └── framework.md                 # Complete lifecycle reference
+├── agents/                          # 🤖 Pre-built agent definitions
+│   ├── frontend.md                  #   UI components, state, routing
+│   ├── backend.md                   #   APIs, business logic, auth
+│   ├── database.md                  #   Schema, migrations, queries
+│   ├── devops.md                    #   Docker, scripts, deploys (CI-agnostic)
+│   ├── qa.md                        #   Tests across all layers
+│   └── agent-map.md                 #   Dispatch rules: file → agent
 ├── commands/                        # 🤖 27 commands (zero ghost)
 │   ├── forge-init.md                # 🚀 Interactive project wizard
 │   ├── forge-dev.md                 # 🚀 Development autopilot
