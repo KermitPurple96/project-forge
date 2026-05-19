@@ -60,7 +60,7 @@ Commands are designed to be used with Claude Code or as prompts in Claude:
 claude "Follow the instructions in commands/development/scaffold.md"
 
 # Run e2e tests
-claude "Follow the instructions in commands/quality/e2e-tests.md"
+claude "Follow the instructions in commands/quality/e2e-test.md"
 
 # Code review
 claude "Follow the instructions in commands/quality/code-review.md"
@@ -101,6 +101,7 @@ project-forge/
 │   │   ├── auth-architecture.md
 │   │   ├── integration-map.md
 │   │   ├── error-handling-strategy.md
+│   │   ├── security-baseline.md
 │   │   ├── testing-strategy.md
 │   │   └── ai-agents-design.md
 │   └── 4-planning/
@@ -120,7 +121,7 @@ project-forge/
     │   ├── docs-gen.md
     │   └── changelog.md
     ├── quality/
-    │   ├── e2e-tests.md
+    │   ├── e2e-test.md
     │   ├── code-review.md
     │   ├── unit-tests.md
     │   ├── integration-tests.md
@@ -161,7 +162,8 @@ project-forge/
         ├── explain.md
         ├── standards-enforce.md
         ├── git-commit.md
-        └── pr-description.md
+        ├── pr-description.md
+        └── secrets-scan.md
 ```
 
 ## Contributing
