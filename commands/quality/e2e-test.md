@@ -14,11 +14,9 @@ Run exhaustive end-to-end verification of features across the full stack. Tests 
 /e2e-test 2026-05-19               # Everything committed on that date
 /e2e-test abc123f                  # Specific commit hash
 /e2e-test abc123f..def456a         # Commit range
-/e2e-test "dropper injection"      # Search commits by message keyword
-/e2e-test LoaderConfig.tsx         # Changes in specific file
-/e2e-test --scope bl               # Only Black-Lotus
-/e2e-test --scope df               # Only Devil-Fruit
-/e2e-test --scope bd               # Only Black-Death
+/e2e-test "auth refactor"          # Search commits by message keyword
+/e2e-test UserSettings.tsx         # Changes in specific file
+/e2e-test --last 5                 # Last 5 commits
 ```
 
 ## CRITICAL: Playwright-First Testing
@@ -33,18 +31,20 @@ Run exhaustive end-to-end verification of features across the full stack. Tests 
 
 **DO NOT** substitute Playwright with:
 - curl + grep (only tests API, not UI rendering)
-- Go unit tests (only tests backend logic, not user experience)
+- Unit tests (only tests backend logic, not user experience)
 - Manual "the code looks correct" assertions
 - `page.textContent("body")` checks (too brittle — use proper locators)
 
 If Playwright is not installed, install it: `npx playwright install chromium`
 
+**Minimum test principle:** A single assert-based smoke test is the minimum viable verification. Don't reach for test frameworks or elaborate harnesses for trivial one-liners — YAGNI applies to tests too. But every feature must have at least one real assertion.
+
 ## Verification tiers (ALL are mandatory)
 
 ### Tier 1: Build Integrity
-- [ ] Backend compiles: `go build ./...` (0 errors)
-- [ ] TypeScript compiles: `npx tsc --noEmit` (0 errors)
-- [ ] Existing test suites pass: `go test ./...`, `pnpm test` / `npx vitest run`
+- [ ] Backend compiles: `go build ./...` / `cargo build` / `python -m py_compile` / `npm run build` (0 errors)
+- [ ] Frontend compiles: `npx tsc --noEmit` (0 errors, if TypeScript)
+- [ ] Existing test suites pass: `go test ./...` / `pytest` / `pnpm test` / `cargo test`
 - [ ] No regressions in test count (tests added, not removed)
 
 ### Tier 2: API Verification (via Playwright `request` context)
@@ -53,16 +53,16 @@ For every new/modified API endpoint, test using Playwright's `APIRequestContext`
 ```typescript
 test("API returns correct shape", async ({ playwright }) => {
   const api = await playwright.request.newContext({ ignoreHTTPSErrors: true });
-  const res = await api.post("https://localhost:40443/api/v1/auth/login", {
+  const res = await api.post(`${APP_API}/auth/login`, {
     data: { username: "admin", password: "changeme" },
   });
   const { access_token } = await res.json();
 
-  const campaignRes = await api.get("https://localhost:40443/api/v1/campaigns", {
+  const itemsRes = await api.get(`${APP_API}/items`, {
     headers: { Authorization: `Bearer ${access_token}` },
   });
-  expect(campaignRes.ok()).toBe(true);
-  const data = await campaignRes.json();
+  expect(itemsRes.ok()).toBe(true);
+  const data = await itemsRes.json();
   expect(data).toBeInstanceOf(Array);
 });
 ```
@@ -70,25 +70,25 @@ test("API returns correct shape", async ({ playwright }) => {
 - [ ] Endpoint responds (not 404/405)
 - [ ] Valid request returns expected response shape
 - [ ] Invalid request returns proper error (not 500)
-- [ ] Response fields match TypeScript types
+- [ ] Response fields match frontend types
 
 ### Tier 3: UI Verification (Playwright browser tests — MANDATORY)
 For every new/modified UI component, write Playwright tests that:
 
 ```typescript
-test("Create dialog has APT dropdown", async ({ page }) => {
-  await loginBL(page);
-  await goTo(page, "/campaigns");
+test("Settings page has theme selector", async ({ page }) => {
+  await loginApp(page);
+  await navigateTo(page, "/settings");
 
   // Click the actual button a user would click
-  await page.getByRole("button", { name: /create/i }).first().click();
+  await page.getByRole("button", { name: /appearance/i }).first().click();
   await page.waitForTimeout(1000);
 
-  // Verify the dialog opened
-  await expect(page.getByRole("heading", { name: "Create Campaign" })).toBeVisible();
+  // Verify the section opened
+  await expect(page.getByRole("heading", { name: "Theme" })).toBeVisible();
 
-  // Verify dropdown has real options loaded from API
-  const select = page.locator("#campaign-profile");
+  // Verify dropdown has real options
+  const select = page.locator("#theme-select");
   await expect(select).toBeVisible();
   const options = select.locator("option");
   expect(await options.count()).toBeGreaterThan(1);
@@ -98,64 +98,75 @@ test("Create dialog has APT dropdown", async ({ page }) => {
 - [ ] Component renders without crash
 - [ ] Interactive elements work (click, type, select)
 - [ ] Data from API displays correctly (not just "page loaded")
-- [ ] Form submission works end-to-end (fill → submit → verify created)
+- [ ] Form submission works end-to-end (fill, submit, verify created)
 - [ ] Error states handled (empty inputs, server errors)
 
-### Tier 4: Data Flow (create → API → DB → UI display)
+### Tier 4: Data Flow (create, read, update, delete)
 - [ ] Create entity via Playwright `request` context
 - [ ] Navigate to the entity in the browser
 - [ ] Verify the data displays correctly in the UI
 - [ ] Update and verify changes propagate
 - [ ] Delete and verify removal
 
-### Tier 5: Functional Verification
-- [ ] The feature ACTUALLY WORKS for a real user
-- [ ] Golden path: start to finish with real data
-- [ ] The feature is DISCOVERABLE — a user can find it
+### Tier 5: Navigation & Discoverability
+- [ ] All sidebar/menu pages load without errors
+- [ ] Settings tabs render correctly
+- [ ] CRUD flows complete start to finish
+- [ ] The feature is discoverable — a user can find it without documentation
+
+### Tier 6: Edge Cases
+- [ ] Empty state (no data yet) renders a helpful message
+- [ ] Very large data sets don't crash the UI (100+ items)
+- [ ] Concurrent operations don't cause race conditions
+- [ ] Browser refresh preserves expected state
+
+### Tier 7: Cross-Browser (optional but recommended)
+- [ ] Chromium (default)
+- [ ] Firefox: `npx playwright test --project=firefox`
+- [ ] WebKit: `npx playwright test --project=webkit`
 
 ## How to write Playwright tests
 
 ### File structure
-Tests go in the project's E2E test directory (e.g., `pentestkit-qa/e2e/bl/`).
-Each test file covers one feature area:
+Tests go in the project's E2E test directory. Each test file covers one feature area:
 
 ```
 e2e/
-  bl/
-    helpers.ts          # Login, API helpers, common selectors
-    01-navigation.spec.ts
-    02-listeners.spec.ts
-    11-campaign-apt.spec.ts   # Your new test
+  helpers.ts          # Login, API helpers, common selectors
+  01-navigation.spec.ts
+  02-auth.spec.ts
+  03-crud-items.spec.ts
+  04-settings.spec.ts
 ```
 
 ### Helper patterns
 
 ```typescript
 // helpers.ts — shared across all test files
-export const BL_URL = "http://localhost:5173";
-export const BL_API = "https://localhost:40443/api/v1";
+export const APP_URL = process.env.APP_URL || "http://localhost:5173";
+export const APP_API = process.env.APP_API || "https://localhost:3000/api";
 
-export async function loginBL(page: Page) {
-  await page.goto(BL_URL);
+export async function loginApp(page: Page) {
+  await page.goto(APP_URL);
   // Handle login form if present
   const loginForm = await page.$('input[type="text"]');
   if (loginForm) {
-    await page.fill('input[type="text"]', "admin");
-    await page.fill('input[type="password"]', "changeme");
+    await page.fill('input[type="text"]', process.env.TEST_USER || "admin");
+    await page.fill('input[type="password"]', process.env.TEST_PASS || "changeme");
     await page.click('button[type="submit"]');
     await page.waitForTimeout(2000);
   }
 }
 
-export async function goTo(page: Page, path: string) {
-  await page.goto(`${BL_URL}/#${path}`, { waitUntil: "networkidle" });
+export async function navigateTo(page: Page, path: string) {
+  await page.goto(`${APP_URL}${path}`, { waitUntil: "networkidle" });
   await page.waitForTimeout(1000);
 }
 ```
 
 ### Test patterns
 
-**Serial tests with shared state** (e.g., create → verify → delete):
+**Serial tests with shared state** (e.g., create, verify, delete):
 ```typescript
 test.describe.configure({ mode: "serial" });
 let entityId: string;
@@ -167,15 +178,15 @@ test("create entity", async ({ playwright }) => {
 });
 
 test("entity visible in UI", async ({ page }) => {
-  await loginBL(page);
-  await goTo(page, "/entities");
+  await loginApp(page);
+  await navigateTo(page, "/entities");
   await expect(page.locator(`text=${entityId.slice(0, 8)}`)).toBeVisible();
 });
 
 test.afterAll(async ({ playwright }) => {
   // Cleanup
   const api = await playwright.request.newContext({ ignoreHTTPSErrors: true });
-  await api.delete(`${BL_API}/entities/${entityId}`, { headers: { ... } });
+  await api.delete(`${APP_API}/entities/${entityId}`, { headers: { ... } });
 });
 ```
 
@@ -192,10 +203,10 @@ const name = `E2E Test ${Date.now()}`;
 
 ```bash
 # Run specific test file
-npx playwright test e2e/bl/11-campaign-apt.spec.ts --reporter=list
+npx playwright test e2e/03-crud-items.spec.ts --reporter=list
 
 # Run all E2E tests
-npx playwright test e2e/bl/ --reporter=list
+npx playwright test e2e/ --reporter=list
 
 # Debug mode (headed browser)
 npx playwright test --headed --debug
@@ -209,11 +220,11 @@ npx playwright test --headed --debug
 
 3. **Self-signed certs**: `page.evaluate(fetch(...))` runs in the browser sandbox which rejects self-signed certs. Use `playwright.request.newContext({ ignoreHTTPSErrors: true })` for API calls.
 
-4. **JWT expiry**: Tokens expire in 5 minutes. Re-authenticate in each test or use a helper that auto-refreshes.
+4. **Token expiry**: Tokens expire. Re-authenticate in each test or use a helper that auto-refreshes.
 
-5. **Operation ID**: Some APIs require `X-Operation-ID` header. Fetch it from `GET /operations` first.
+5. **Duplicate keys**: Entity names must be unique. Use timestamps in names.
 
-6. **Duplicate keys**: Campaign/operation names must be unique. Use timestamps in names.
+6. **Hash routing**: If the app uses hash routing (`/#/path`), adjust `navigateTo` accordingly: `${APP_URL}/#${path}`.
 
 ## Rules
 
@@ -224,6 +235,7 @@ npx playwright test --headed --debug
 5. **Commit test files**: Tests are deliverables, not throwaway scripts.
 6. **Test the DIFF**: Focus on what changed today, not the entire app.
 7. **Services must be running**: If services are down, start them first. Don't skip tests.
+8. **Minimum test, not zero test**: A single smoke assert beats no test. But don't build a framework for one check.
 
 ## Reporting
 
@@ -234,15 +246,15 @@ Output a verification matrix after all tests pass:
 
 | # | Test | Status | Detail |
 |---|------|--------|--------|
-| 1 | Campaigns page loads | PASS | Playwright 8.5s |
-| 2 | APT dropdown populated | PASS | 15 profiles from DF |
-| 3 | Calendar picker works | PASS | Portal popup, Today button |
-| 4 | Campaign creation API | PASS | 201 Created |
-| 5 | Coverage API shape | PASS | 12 phases, 129 available |
-| 6 | Campaign detail UI | PASS | APT card + TTP dashboard |
+| 1 | Dashboard loads | PASS | Playwright 2.1s |
+| 2 | User list populated | PASS | 15 users from API |
+| 3 | Create user form | PASS | Fill + submit + verify |
+| 4 | Edit user | PASS | Update name, verify saved |
+| 5 | Delete user | PASS | Remove + verify gone |
+| 6 | Settings tabs | PASS | All 4 tabs render |
 
-Playwright: 8/8 passed (1.1m)
-Go tests: 12/12 packages pass
-TS build: 0 errors
-Client tests: 901/901 pass
+Playwright: 6/6 passed (45s)
+Backend tests: 14/14 pass
+Frontend build: 0 errors
+Frontend tests: 120/120 pass
 ```
