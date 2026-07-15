@@ -2,6 +2,18 @@
 
 > The single entry point for starting a new project. An interactive wizard that walks the user through every decision, does research, and generates all templates automatically.
 
+## Prerequisites
+
+Before starting, ensure these extensions are installed for the best experience:
+
+| Extension | Purpose | Install |
+|-----------|---------|---------|
+| chrome-devtools-mcp | Browser inspection, screenshots, console monitoring | Claude Code MCP plugin |
+| claude-mem | Persistent memory across sessions | `npx claudePlugins install thedotmack/claude-mem` |
+| agent-browser | Browser automation for visual testing | `npx claudePlugins install vercel-labs/agent-browser` |
+
+Claude will check for these and prompt installation if missing.
+
 ## Invocation
 
 ```
@@ -60,6 +72,17 @@ Start with an open question:
 
 Let the user talk freely. Then ask targeted follow-ups for anything they didn't cover. Don't ask everything at once — have a conversation.
 
+**Start with purpose, not features:**
+
+Before ANY technical questions, understand the human need:
+
+> "Before we talk about features or tech — what's the core purpose? If this app existed perfectly tomorrow, what would change for the people using it?"
+
+Then probe deeper:
+> "Walk me through a typical day for your user. Where does frustration hit? Where does this app step in?"
+
+This grounds every technical decision in user value, not developer assumptions.
+
 **Must-extract information:**
 
 ```
@@ -105,8 +128,6 @@ Let the user talk freely. Then ask targeted follow-ups for anything they didn't 
 | `user-flows.md` | Library, data pipeline |
 
 Don't ask about skipped templates — just don't generate them.
-□ Legal/compliance? (GDPR, HIPAA, accessibility requirements)
-```
 
 **Research step:** After the user describes their vision, search for:
 - Competitors / similar products
@@ -213,6 +234,33 @@ Start with mood, not specifics:
 
 **Research step:** If the user names inspiration sites, research their design patterns.
 
+**Generate visual reference:**
+
+After collecting design preferences, generate a `styles.html` reference page:
+
+> "I'll create a visual reference page so you can see the look before we write any app code."
+
+Create `styles.html` in the project root — a standalone HTML file (no dependencies) that shows:
+- Color palette (primary, secondary, accent, neutrals, semantic colors)
+- Typography scale (headings h1-h6, body, caption, code)
+- Spacing system (4px base grid visualization)
+- Border radius options
+- Shadow levels
+- Button variants (primary, secondary, outline, ghost, danger)
+- Form elements (inputs, selects, checkboxes, toggles)
+- Card component
+- Badge/tag variants
+- Alert/notification variants
+- Dark mode toggle (if applicable)
+- Sample layout: sidebar + content area with mock data
+
+Open it in the browser for the user:
+> "Here's your visual reference. Take a look — what feels right? What should change?"
+
+Iterate until the user approves. Each iteration updates `styles.html` AND `design-tokens.md`.
+
+**Use Chrome DevTools MCP or agent-browser to show the page to the user.**
+
 **Output:** Generate and write:
 - `templates/2-design/brand-identity.md`
 - `templates/2-design/design-tokens.md`
@@ -246,6 +294,34 @@ Start with mood, not specifics:
 > **Alternative I considered:** [X] — but ruled it out because [Y].
 >
 > Want to change anything?"
+
+**Deep research phase:**
+
+If the user is unsure about technologies, or if the project has unusual requirements, perform deep research BEFORE recommending:
+
+1. **WebSearch** for: "[project type] best stack 2026", "[requirement] framework comparison"
+2. **Fetch documentation** for top 3 candidates (use context7 MCP if available)
+3. **Compare** on these axes:
+   - Learning curve vs team experience
+   - Community size and activity
+   - Performance characteristics
+   - Deployment options within budget
+   - Long-term maintenance burden
+   - Library ecosystem for needed features
+
+Present findings as a comparison table, THEN make the recommendation:
+
+> "I researched 4 options for your backend. Here's the comparison:
+> | | Express | Fastify | Hono | Go Chi |
+> |---|---|---|---|---|
+> | Performance | Good | Excellent | Excellent | Best |
+> | Learning curve | Low | Low | Low | Medium |
+> | Ecosystem | Huge | Good | Growing | Good |
+> | Your use case fit | 7/10 | 8/10 | 7/10 | 9/10 |
+>
+> I recommend Fastify because [specific reasons based on their requirements]."
+
+Only skip research if the user explicitly says "I want X, don't research alternatives."
 
 **Must-extract information:**
 
